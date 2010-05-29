@@ -28,24 +28,24 @@ my $grammar = q{
 
 
 
-  CreateTableStatement : /create/i {print 'create';} /table/i {print 'table';} <skip:'[ \t\r\n]*'> IfNotExists(?) {print 'exists';} Identifier {print 'identifier';} Create2 {print 'create2';}
+  CreateTableStatement : /create/i /table/i <skip:'[ \t\r\n]*'> IfNotExists(?) Identifier Create2
 
-  Create2 : {print 'pre(';} '(' {print '(';} FieldListItem(s /,/) {print 'fields';} ')' {print ')';} CreateTableOptions(?)
+  Create2 : '(' <leftop: FieldListItem Comma FieldListItem> <skip:'[ \t\r\n]*'> ')' CreateTableOptions(?)
+          | <error>
 
-  CreateTableOptionsSpaceSeparated : CreateTableOption
-                                   | CreateTableOption CreateTableOptionsSpaceSeparated
+  Comma : /\s*,\s*/
 
-  CreateTableOptions : CreateTableOption
+  CreateTableOptions : CreateTableOption ',' CreateTableOptions
                      | CreateTableOption CreateTableOptions
-                     | CreateTableOption ',' CreateTableOptions
+                     | CreateTableOption
 
   CreateTableOption : /engine/i OptEqual StorageEngines
+                    | /auto_increment/i OptEqual UInt
                     | /type/i OptEqual StorageEngines
                     | /max_rows/i OptEqual UInt
                     | /min_rows/i OptEqual UInt
                     | /avg_row_length/i OptEqual UInt
                     | /comment/i OptEqual String
-                    | /auto_increment/i OptEqual UInt
                     | /pack_keys/i OptEqual UInt
                     | /pack_keys/i OptEqual /default/i
                     | /checksum/i OptEqual UInt
@@ -56,6 +56,7 @@ my $grammar = q{
                     | /raid_chunksize/i OptEqual UInt
                     | DefaultCharset
                     | DefaultCollation
+                    | <error>
 
   DefaultCharset : Default(?) Charset OptEqual Ident
 
@@ -63,8 +64,9 @@ my $grammar = q{
 
   Default : /DEFAULT/i
 
-  FieldListItem : ColumnDef {print 'columndef';}
-                | KeyDef {print 'keydef';}
+  FieldListItem : ColumnDef
+                | KeyDef
+                | <error>
 
   ColumnDef : FieldSpec
 
@@ -73,9 +75,9 @@ my $grammar = q{
          | Constraint(?) ConstraintKeyType Ident(?) KeyAlg '(' KeyList(s /,/) ')' KeyAlg
          | Constraint
 
-  KeyAlg :
-         | /using/i BtreeRtree(?)
+  KeyAlg : /using/i BtreeRtree(?)
          | /type/i BtreeRtree(?)
+         |
 
   KeyType : KeyOrIndex
 
@@ -104,9 +106,9 @@ my $grammar = q{
   Constraint : /constraint/i Ident(?)
 
   FieldSpec : FieldIdent Type OptAttributes
+            | <error>
 
-  OptAttributes:
-               | <leftop: Attribute /,/ Attribute>
+  OptAttributes: Attribute(s?)
 
   Type : IntType FieldLength(?) FieldOption(s?)
        | RealType Precision(?) FieldOption(s?)
@@ -124,9 +126,9 @@ my $grammar = q{
        | NVarchar FieldLength BinMod(?)
        | /varbinary/i FieldLength
        | /year/i FieldLength(?) FieldOption(s?)
+       | /timestamp/i FieldLength(?)
        | /date/i
        | /time/i
-       | /timestamp/i FieldLength(?)
        | /datetime/i
        | /tinyblob/i
        | /blob/i FieldLength(?)
@@ -146,6 +148,7 @@ my $grammar = q{
        | /set/i '(' StringList ')' Binary(?)
        | /long/i Binary(?)
        | /serial/i
+       | <error>
 
   SpatialType : /geometry/i
               | /geometrycollection/i
@@ -279,8 +282,8 @@ my $grammar = q{
 
   IfNotExists : /if not exists/i
 
-  OptEqual :
-           | '='
+  OptEqual : '='
+           |
 
   FieldIdent : Identifier
              | Identifier '.' Identifier
@@ -320,6 +323,7 @@ $sql =~ s/^\s*--.*$//img;
 #$sql =~ s!/\*[^*]*(?:\*[^*]*)*\*/!!imsg;
 #$sql =~ s#/\*[^*]*\*+([^/*][^*]*\*+)*/|([^/"']*("[^"\\]*(\\[\d\D][^"\\]*)*"[^/"']*|'[^'\\]*(\\[\d\D][^'\\]*)*'[^/"']*|/+[^*/][^/"']*)*)#$2#g;
 $sql =~ s{/\*.*?\*/}{}gs;
+$sql =~ s/\n+/\n/sg;
 
 print $sql;
 
