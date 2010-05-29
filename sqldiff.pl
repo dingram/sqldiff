@@ -14,11 +14,11 @@ my $grammar = q{
   SqlStatement : Statement(?) Semicolon
                | <error>
 
-  Statement : UseStatement { print "\033[1;32mUSE\033[m\n"; }
-            | CreateDatabaseStatement { print "\033[1;32mCREATE DB\033[m\n"; }
-            | CreateTableStatement { print "\033[1;32mCREATE TABLE\033[m\n"; }
-            | DropTableStatement { print "\033[1;32mDROP TABLE\033[m\n"; }
-            | InsertStatement { print "\033[1;32mINSERT\033[m\n"; }
+  Statement : UseStatement { print "\033[1;32mUSE\033[m"; }
+            | CreateDatabaseStatement { print "\033[1;32mCREATE DB\033[m"; }
+            | CreateTableStatement { print "\033[1;32mCREATE TABLE\033[m"; }
+            | DropTableStatement { print "\033[1;32mDROP TABLE\033[m"; }
+            | InsertStatement { print "\033[1;32mINSERT\033[m"; }
             | <error>
 
   UseStatement : /use/i Identifier
@@ -70,9 +70,9 @@ my $grammar = q{
 
   ColumnDef : FieldSpec
 
-  KeyDef : KeyType Ident(?) KeyAlg '(' KeyList(s /,/) ')' KeyAlg
-         | KeyTypeFulltextOrSpatial Ident(?) '(' KeyList(s /,/) ')'
-         | Constraint(?) ConstraintKeyType Ident(?) KeyAlg '(' KeyList(s /,/) ')' KeyAlg
+  KeyDef : KeyType Identifier(?) KeyAlg '(' KeyList(s /,/) ')' KeyAlg
+         | KeyTypeFulltextOrSpatial Identifier(?) '(' KeyList(s /,/) ')'
+         | Constraint(?) ConstraintKeyType Identifier(?) KeyAlg '(' KeyList(s /,/) ')' KeyAlg
          | Constraint
 
   KeyAlg : /using/i BtreeRtree(?)
@@ -93,8 +93,8 @@ my $grammar = q{
 
   KeyList : KeyPart OrderDir
 
-  KeyPart : Ident '(' UNum ')'
-          | Ident
+  KeyPart : Identifier '(' UNum ')'
+          | Identifier
 
   KeyTypeFulltextOrSpatial : /fulltext/i KeyOrIndex(?)
                            | /spatial/i KeyOrIndex(?)
@@ -103,10 +103,9 @@ my $grammar = q{
            | /desc/i
            |
 
-  Constraint : /constraint/i Ident(?)
+  Constraint : /constraint/i Identifier(?)
 
   FieldSpec : FieldIdent Type OptAttributes
-            | <error>
 
   OptAttributes: Attribute(s?)
 
@@ -127,9 +126,9 @@ my $grammar = q{
        | /varbinary/i FieldLength
        | /year/i FieldLength(?) FieldOption(s?)
        | /timestamp/i FieldLength(?)
+       | /datetime/i
        | /date/i
        | /time/i
-       | /datetime/i
        | /tinyblob/i
        | /blob/i FieldLength(?)
        | SpatialType
@@ -148,7 +147,6 @@ my $grammar = q{
        | /set/i '(' StringList ')' Binary(?)
        | /long/i Binary(?)
        | /serial/i
-       | <error>
 
   SpatialType : /geometry/i
               | /geometrycollection/i
@@ -200,8 +198,8 @@ my $grammar = q{
             | /on update current_timestamp/i
             | /auto_increment/i
             | Primary(?) /key/i
-            | /unique/i
             | /unique key/i
+            | /unique/i
             | /comment/i String
             | /collate/i Collation
 
@@ -221,6 +219,7 @@ my $grammar = q{
              | Charset CharsetName
 
   Charset : /charset/i
+          | /character/i /set/i
           | /char/i /set/i
 
   CharsetName : /binary/i
@@ -289,7 +288,8 @@ my $grammar = q{
              | Identifier '.' Identifier
              | '.' Identifier
 
-  Identifier : Ident
+  Identifier : /(?:primary|using)/i <commit> <reject>
+             | Ident
              | IdentQuoted
 
   IdentQuoted : '`' Ident '`'
@@ -318,13 +318,11 @@ $::RD_WARN    =1;
 my $parser = new Parse::RecDescent($grammar);
 my $sql = join '',(<>);
 
-# preprocess SQL to strip comments
+# preprocess SQL to strip comments and blank lines
 $sql =~ s/^\s*--.*$//img;
-#$sql =~ s!/\*[^*]*(?:\*[^*]*)*\*/!!imsg;
-#$sql =~ s#/\*[^*]*\*+([^/*][^*]*\*+)*/|([^/"']*("[^"\\]*(\\[\d\D][^"\\]*)*"[^/"']*|'[^'\\]*(\\[\d\D][^'\\]*)*'[^/"']*|/+[^*/][^/"']*)*)#$2#g;
 $sql =~ s{/\*.*?\*/}{}gs;
 $sql =~ s/\n+/\n/sg;
 
-print $sql;
+#print $sql;
 
 $parser->SqlDump($sql);
