@@ -304,14 +304,183 @@ $Parse::RecDescent::skip='[ \t\r\n]*';
 $::RD_HINT    =1;
 $::RD_WARN    =1;
 
+
+##############################################################################
+#                                                                            #
+#                                 Main program                               #
+#                                                                            #
+##############################################################################
+
+unless (scalar @ARGV == 2) {
+  print STDERR "Usage: sqldiff source.sql target.sql\n";
+  exit 1;
+}
+
+my $file_a = $ARGV[0];
+my $file_b = $ARGV[1];
+my $fh;
+
+print "-- \n-- SQL diff generated at ".(scalar localtime)."\n-- \n\n";
+
+open $fh, '<', $file_a or die "Could not open first file: $!\n";
+my $sql_a = join '',(<$fh>);
+close $fh;
+
+open $fh, '<', $file_b or die "Could not open second file: $!\n";
+my $sql_b = join '',(<$fh>);
+close $fh;
+
+print STDERR "Constructing parser... ";
 my $parser = new Parse::RecDescent($grammar);
-my $sql = join '',(<>);
+print STDERR "ok\n";
 
-# preprocess SQL to strip comments and blank lines
-$sql =~ s/^\s*--.*$//img;
-$sql =~ s{/\*.*?\*/}{}gs;
-$sql =~ s/\n+/\n/sg;
+print STDERR "Parsing first database...\n";
+my $db_a = parseSQL($sql_a);
+print STDERR "Finished parsing first database...\n";
 
-#print $sql;
+print STDERR "Parsing second database...\n";
+my $db_b = parseSQL($sql_b);
+print STDERR "Finished parsing second database...\n";
 
-$parser->SqlDump($sql);
+#print Dumper($db_a);
+#print Dumper($db_b);
+
+my $diff = findDiffs($db_a, $db_b);
+
+print STDERR "\n\n";
+
+outputDiff($diff);
+
+outputDiffSQL($diff);
+
+print "-- \n-- End of SQL diff (at ".(scalar localtime).")\n-- \n\n";
+
+
+
+##############################################################################
+#                                                                            #
+#                               End main program                             #
+#                                                                            #
+##############################################################################
+
+sub parseSQL {
+  my ($sql) = @_;
+
+  # preprocess SQL to strip comments and blank lines
+  $sql =~ s/^\s*--.*$//img;
+  $sql =~ s{/\*.*?\*/}{}gs;
+  $sql =~ s/\n+/\n/sg;
+
+  $::tables = {};
+  $parser->SqlDump($sql);
+
+  my $ret = $::tables;
+  $::tables = {};
+
+  # post-process tables to separate constraints
+  foreach my $k (keys %$ret) {
+    my (%fields, @constraints);
+    foreach my $f (@{$ret->{$k}{fields}}) {
+      if (exists $f->{constraint}) {
+        push @constraints, $f;
+      } else {
+        $fields{$f->{name}} = $f;
+      }
+    }
+    $ret->{$k}{fields} = {%fields};
+    $ret->{$k}{constraints} = [@constraints];
+  }
+
+  return $ret;
+}
+
+sub outputDiff {
+  my ($diff) = @_;
+
+  foreach my $type (qw(tables columns indexes)) {
+    print "\n\e[1;33mType: ", ucfirst $type, "\e[m\n";
+    foreach my $action (qw(add mod del)) {
+      next unless @{$diff->{$type}{$action}};
+      my $char = $action eq 'add' ? "\e[1;32m+" : $action eq 'mod' ? "\e[1;36m~" : "\e[1;31m-";
+      foreach my $item (@{$diff->{$type}{$action}}) {
+        print "$char ", $item->{name}, " with ", (scalar keys %{$item->{fields}}), " field(s)\e[m\n";
+      }
+    }
+  }
+}
+
+sub createTableSQL {
+  my ($tbl) = @_;
+  my $sql = '';
+  my $i=0;
+
+  $sql .= "CREATE TABLE `". $tbl->{name}. "` (";
+  # fields
+  $i=0;
+  foreach my $field (values %{$tbl->{fields}}) {
+    $sql .= ', ' if ($i++);
+    $sql .= "`".$field->{name}."` ";
+  }
+  # constraints
+  $sql .= ") ";
+  # options
+  $sql .= ";\n";
+
+  return $sql;
+}
+
+sub outputDiffSQL {
+  my ($diff) = @_;
+
+  print "\n";
+  foreach my $tbl (@{$diff->{tables}{add}}) {
+    print createTableSQL($tbl);
+  }
+  print "\n";
+  foreach my $tbl (@{$diff->{tables}{del}}) {
+    print 'DROP TABLE `', $tbl->{name}, "`;\n";
+  }
+  print "\n";
+}
+
+sub findDiffs {
+  my ($db_a, $db_b) = @_;
+  my $diff = {
+    'tables'=>{
+      'add'=>[],
+      'mod'=>[],
+      'del'=>[]
+    },
+    'columns'=>{
+      'add'=>[],
+      'mod'=>[],
+      'del'=>[]
+    },
+    'indexes'=>{
+      'add'=>[],
+      'mod'=>[],
+      'del'=>[]
+    },
+  };
+
+  foreach (keys %$db_b) {
+    if (!defined $db_a->{$_}) {
+      # new table
+      push @{$diff->{tables}{add}}, $db_b->{$_};
+      next;
+    }
+    # table exists in both; check columns
+    my $tbl_a = $db_a->{$_};
+    my $tbl_b = $db_b->{$_};
+  }
+
+  foreach (keys %$db_a) {
+    if (!defined $db_b->{$_}) {
+      # new table
+      push @{$diff->{tables}{del}}, $db_a->{$_};
+      next;
+    }
+  }
+
+  return $diff;
+}
