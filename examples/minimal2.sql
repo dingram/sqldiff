@@ -29,7 +29,19 @@ USE `minimalist`;
 
 DROP TABLE IF EXISTS `mini_test`;
 CREATE TABLE `mini_test` (
-  `id` int(11) NOT NULL
+  `id` int(11) NOT NULL,
+  `blah` varchar(255)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `new_table`
+--
+
+DROP TABLE IF EXISTS `new_table`;
+CREATE TABLE `new_table` (
+  `id` int(11) NOT NULL,
+  `foo` varchar(255),
+  `blah` varchar(255) not null
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 --
@@ -48,17 +60,6 @@ CREATE TABLE `test_table` (
   `txt` text default 'foobar',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=536 DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `list_items`
---
-
-DROP TABLE IF EXISTS `list_items`;
-CREATE TABLE `list_items` (
-  `id` int(11) NOT NULL auto_increment,
-  `data` text NOT NULL,
-  PRIMARY KEY  USING BTREE (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `multi_primary`
