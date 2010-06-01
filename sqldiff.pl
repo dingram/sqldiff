@@ -407,6 +407,7 @@ sub outputDiff {
       }
     }
   }
+  print "\n\e[1;35mEnd of diff summary\e[m\n";
 }
 
 sub createTableSQL {
