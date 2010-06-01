@@ -419,11 +419,38 @@ sub createTableSQL {
   # fields
   $i=0;
   foreach my $field (values %{$tbl->{fields}}) {
+    my $type = $field->{type};
+    my $opts = $type->{opts};
+    my $attr = $field->{attrs};
+
     $sql .= ', ' if ($i++);
-    $sql .= "`".$field->{name}."` ";
+    $sql .= "`".$field->{name}."` ".(uc $type->{type});
+    if (defined $type->{length}) {
+      $sql .= "($type->{length})";
+    }
+    if (defined $opts->{signed}) {
+      $sql .= ' '.($opts->{signed}?'':'UN').'SIGNED';
+    }
+    if (defined $opts->{zerofill} && $opts->{zerofill}) {
+      $sql .= ' ZEROFILL';
+    }
+    if (defined $attr->{null}) {
+      $sql .= ' '.($opts->{null}?'':'NOT ').'NULL';
+    }
+    if (defined $opts->{auto_increment} && $opts->{auto_increment}) {
+      $sql .= ' AUTO_INCREMENT';
+    }
+    if (defined $attr->{on_update}) {
+      $sql .= ' ON UPDATE '.$attr->{on_update};
+    }
+    if (defined $attr->{comment}) {
+      # TODO: any fixups to do?
+      my $comment = $attr->{comment};
+      $sql .= ' COMMENT \''.$comment.'\'';
+    }
   }
   # constraints
-  $sql .= ") ";
+  $sql .= ")";
   # options
   $sql .= ";\n";
 
