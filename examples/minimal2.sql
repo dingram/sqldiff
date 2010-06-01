@@ -39,8 +39,8 @@ CREATE TABLE `mini_test` (
 
 DROP TABLE IF EXISTS `new_table`;
 CREATE TABLE `new_table` (
-  `id` int(11) NOT NULL,
-  `foo` varchar(255),
+  `id` int(11) UNSIGNED NOT NULL,
+  `foo` varchar(255) COMMENT 'This is fooish\'s column',
   `blah` varchar(255) not null
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
