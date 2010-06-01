@@ -100,26 +100,26 @@ my $grammar = q{
 
   OptAttributes: Attribute(s?)    { $return={}; @{$return}{keys %$_}=(values %$_) foreach (@{$item[1]}); }
 
-  Type : IntType FieldLength(?) OptFieldOptions       {$return = {'type'=>$item[1],'len'=>$item[2]->[0],'opts'=>$item[3]};}
+  Type : IntType FieldLength(?) OptFieldOptions       {$return = {'type'=>$item[1],'length'=>$item[2]->[0],'opts'=>$item[3]};}
        | RealType Precision(?) OptFieldOptions        {$return = {'type'=>$item[1],'prec'=>$item[2]->[0],'opts'=>$item[3]};}
        | /float/i FloatOptions(?) OptFieldOptions     {$return = {'type'=>$item[1],'opts'=>$item[3]}; @{$return}{keys %{$item[2]}}=(values %{$item[2]}) if (@{$item[2]});}
-       | /bit/i FieldLength(?)                        {$return = {'type'=>$item[1],'len'=>$item[2]->[0]};}
+       | /bit/i FieldLength(?)                        {$return = {'type'=>$item[1],'length'=>$item[2]->[0]};}
        | /bool(?:ean)?/i                              {$return = {'type'=>$item[1]};}
-       | Char FieldLength Binary(?)                   {$return = {'type'=>$item[1],'len'=>$item[2]};}
+       | Char FieldLength Binary(?)                   {$return = {'type'=>$item[1],'length'=>$item[2]};}
        | Char Binary(?)                               {$return = {'type'=>$item[1]};}
-       | NChar FieldLength BinMod(?)                  {$return = {'type'=>$item[1],'len'=>$item[2],'binary'=>(scalar @{$item[3]})};}
+       | NChar FieldLength BinMod(?)                  {$return = {'type'=>$item[1],'length'=>$item[2],'binary'=>(scalar @{$item[3]})};}
        | NChar BinMod(?)                              {$return = {'type'=>$item[1],'binary'=>(scalar @{$item[3]})};}
-       | Varchar FieldLength Binary(?)                {$return = {'type'=>$item[1],'len'=>$item[2]};}
-       | NVarchar FieldLength BinMod(?)               {$return = {'type'=>$item[1],'len'=>$item[2],'binary'=>(scalar @{$item[3]})};}
-       | /binary/i FieldLength(?)                     {$return = {'type'=>$item[1],'len'=>$item[2]->[0]};}
-       | /varbinary/i FieldLength                     {$return = {'type'=>$item[1],'len'=>$item[2]};}
-       | /year/i FieldLength(?) OptFieldOptions       {$return = {'type'=>$item[1],'len'=>$item[2]->[0],'opts'=>$item[3]};}
-       | /timestamp/i FieldLength(?)                  {$return = {'type'=>$item[1],'len'=>$item[2]->[0]};}
+       | Varchar FieldLength Binary(?)                {$return = {'type'=>$item[1],'length'=>$item[2]};}
+       | NVarchar FieldLength BinMod(?)               {$return = {'type'=>$item[1],'length'=>$item[2],'binary'=>(scalar @{$item[3]})};}
+       | /binary/i FieldLength(?)                     {$return = {'type'=>$item[1],'length'=>$item[2]->[0]};}
+       | /varbinary/i FieldLength                     {$return = {'type'=>$item[1],'length'=>$item[2]};}
+       | /year/i FieldLength(?) OptFieldOptions       {$return = {'type'=>$item[1],'length'=>$item[2]->[0],'opts'=>$item[3]};}
+       | /timestamp/i FieldLength(?)                  {$return = {'type'=>$item[1],'length'=>$item[2]->[0]};}
        | /datetime/i                                  {$return = {'type'=>$item[1]};}
        | /date/i                                      {$return = {'type'=>$item[1]};}
        | /time/i                                      {$return = {'type'=>$item[1]};}
        | /tinyblob/i                                  {$return = {'type'=>$item[1]};}
-       | /blob/i FieldLength(?)                       {$return = {'type'=>$item[1],'len'=>$item[2]->[0]};}
+       | /blob/i FieldLength(?)                       {$return = {'type'=>$item[1],'length'=>$item[2]->[0]};}
        | SpatialType                                  {$return = {'type'=>$item[1]};}
        | /mediumblob/i                                {$return = {'type'=>$item[1]};}
        | /longblob/i                                  {$return = {'type'=>$item[1]};}
@@ -127,7 +127,7 @@ my $grammar = q{
        | /long/i Varchar Binary(?)                    {$return = {'type'=>$item[1]};}
        | /long/i Binary(?)                            {$return = {'type'=>$item[1]};}
        | /tinytext/i Binary(?)                        {$return = {'type'=>$item[1]};}
-       | /text/i FieldLength(?) Binary(?)             {$return = {'type'=>$item[1],'len'=>$item[2]->[0]};}
+       | /text/i FieldLength(?) Binary(?)             {$return = {'type'=>$item[1],'length'=>$item[2]->[0]};}
        | /mediumtext/i Binary(?)                      {$return = {'type'=>$item[1]};}
        | /longtext/i Binary(?)                        {$return = {'type'=>$item[1]};}
        | /decimal/i FloatOptions(?) OptFieldOptions   {$return = {'type'=>$item[1],'opts'=>$item[3]}; @{$return}{keys %{$item[2]}}=(values %{$item[2]}) if (@{$item[2]});}
