@@ -62,8 +62,8 @@ my $grammar = q{
 
   ColumnDef : FieldSpec
 
-  KeyDef : KeyType Identifier(?) KeyAlg(?) '(' KeyList(s /,/) ')' KeyAlg(?)      {$return = {'type'=>$item[1],'name'=>$item[2],'alg'=>$item[3],'fields'=>$item[5],'alg2'=>$item[7]};}
-         | KeyTypeFulltextOrSpatial Identifier(?) '(' KeyList(s /,/) ')'   {$return = {'type'=>$item[1],'name'=>$item[2],,'fields'=>$item[4]};}
+  KeyDef : KeyType Identifier(?) KeyAlg(?) '(' KeyList(s /,/) ')' KeyAlg(?)      {$return = {'constraint'=>[],'type'=>$item[1],'name'=>$item[2],'alg'=>$item[3],'fields'=>$item[5],'alg2'=>$item[7]};}
+         | KeyTypeFulltextOrSpatial Identifier(?) '(' KeyList(s /,/) ')'   {$return = {'constraint'=>[],'type'=>$item[1],'name'=>$item[2],'fields'=>$item[4]};}
          | Constraint(?) ConstraintKeyType Identifier(?) KeyAlg(?) '(' KeyList(s /,/) ')' KeyAlg(?)   {$return = {'constraint'=>$item[1],'type'=>$item[2],'name'=>$item[3],'alg'=>$item[4],'fields'=>$item[6],'alg2'=>$item[8]};}
          | Constraint   {$return = {'constraint'=>$item[1]};}
 
